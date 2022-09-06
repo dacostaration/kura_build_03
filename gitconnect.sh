@@ -1,6 +1,16 @@
 #!/bin/bash
 
 # Git Connect Script
+# The "gitconnect.sh" script will, based on user input, securely create a git user and push changes 
+# to an auto-generated branch [i.e. NOT the main branch] named specifically for the new user
+# ----------------------------------------------------------------------------------------------------
+# The script includes the following functionality:
+# 1. Creates users and places them into the "gitconnect" group
+# 2. Once users indicated they are ready to ADD, COMMIT + PUSH, the script will run all git commands in sequence.
+# 3. Check the file for sensitive information like phone numbers, SSNs, etc. before pushing.
+# ----------------------------------------------------------------------------------------------------
+# Potential Failure(s):
+# 1. Script only identifies US phone number formats
 
 
 ###################################################################################################################
@@ -234,14 +244,32 @@ tinyLoop(){
 # cleanLine will:
 # i. [TEST FUNCTIONALITY] set the user's input to all lowercase .....will not be performed when the function is live
 # ii. [LIVE FUNTIONALITY] purge the user's input of all PII and possible sensitive information. 
-# iii. notify the user if any PII has been found/removed
+# iii. indicate to the user where any PII has been found/removed
 cleanLine(){
-	if [[ "$removePII" == false ]]; then
+	# if [[ "$removePII" == false ]]; then
+	# 	line=${line,,}		#.....simply make it lowercase [1st iteration]. In "LIVE" mode, this function will remove PII
+	# else 
+	# 	echo "[$systemName]: Removing PII and sensitive information..."
+	# 	sleep 1
+	# fi
+	if [[ "$removePII" == False ]]; then
+        # echo ">> Case 01"
 		line=${line,,}		#.....simply make it lowercase [1st iteration]. In "LIVE" mode, this function will remove PII
 	else 
-		echo "[$systemName]: Removing PII and sensitive information..."
+        # echo ">> Case 02"
+		echo ">> Removing PII and sensitive information..."
+        # line=${line,,}
+        line="$(echo ${line} | sed -e 's/\([0-9]\{3\}-[0-9]\{2\}-[0-9]\{4\}\)/NNN-NN-NNNN/g')"      #.....remove SNs
+        
+        # TST: echo +1 123-123-2333 | sed -e 's/\+1\s\?\([0-9]\{3\}-[0-9]\{3\}-[0-9]\{4\}\)/+1 NNN-NNN-NNNN/g'
+        line="$(echo ${line} | sed -e 's/\+1\s\?\([0-9]\{3\}-[0-9]\{3\}-[0-9]\{4\}\)/+1 NNN-NNN-NNNN/g')"   #.....remove phone number format +1 ###-###-####
+        # TST: echo (123) 123-1234 | sed -e 's/\([0-9]\{3\}\)\s\?[0-9]\{3\}-[0-9]\{4\}/(NNN) NNN-NNNN/g'
+        line="$(echo ${line} | sed -e 's/\(([0-9]\{3\})\s\?[0-9]\{3\}-[0-9]\{4\}\)/(NNN) NNN-NNNN/g')"		#.....remove phone number format (###) ###-####
+        line="$(echo ${line} | sed -e 's/\([0-9]\{3\}-[0-9]\{3\}-[0-9]\{4\}\)/NNN-NNN-NNNN/g')"      		#.....remove phone number format ###-###-####
+        line="$(echo ${line} | sed -e 's/\([0-9]\{3\}\.[0-9]\{3\}\.[0-9]\{4\}\)/NNN-NNN-NNNN/g')"     		 #.....remove phone number format ###.###.####
+        line="$(echo ${line} | sed -e 's/\([0-9]\{3\}\-[0-9]\{4\}\)/NNN-NNNN/g')"     						 #.....remove phone number format ###-####
 		sleep 1
-	fi
+	fi	
 }
 
 ### 
